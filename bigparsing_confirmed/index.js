@@ -1,6 +1,8 @@
 const fs = require('fs');
 const readline = require("readline");
 
+let restart = false;
+
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -9,9 +11,14 @@ const rl = readline.createInterface({
 rl.question("Quel est l'id ? ", async number => {
     const givenId = parseInt(number, 10);
 
-    const readable = fs.createReadStream('./input.json', { encoding: 'utf8' });
+    let readable = fs.createReadStream('./input2.json', { encoding: 'utf8' });
 
     await (findName(readable, givenId));
+    if (restart) {
+        readable = fs.createReadStream('./input2.json', { encoding: 'utf8', highWaterMark: 128*1024})
+    }
+    await (findName(readable, givenId));
+
     rl.close();
 });
 
@@ -26,12 +33,17 @@ async function findName(readable, givenId) {
             let openingBracket = chunk.slice(0, chunk.indexOf(givenId)).lastIndexOf('{');
             let closingBracket = chunk.indexOf('}', chunk.indexOf(givenId)) + 1;
 
-            if (openingBracket != -1 && closingBracket != -1) {
+            if (openingBracket != -1 && closingBracket != -1 ) {
+                if ( openingBracket == 0 || closingBracket == 0 ) {
+                    restart = true;
+                    break;
+                } else {
                 let str = JSON.parse(chunk.slice(openingBracket, closingBracket));
                 if (str.id === givenId) {
+                    restart = false ;
                     console.log(`${str.id} | ${str.name}`);
                     break;
-                    
+                }
                 }
             }
         }
