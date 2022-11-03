@@ -7,15 +7,16 @@
         {
             "type": "node",
             "request": "launch",
+            "console": "integratedTerminal",
             "name": "Launch Program",
             "skipFiles": [
                 "<node_internals>/**"
             ],
             "cwd": "${workspaceFolder}\\bigparsing_confirmed",
             "env": {
-                "NODE_OPTIONS": "--max-old-space-size=50", 
+                "NODE_OPTIONS": "--max-old-space-size=50"
             },
-            "args": ["--max-old-space-size=1"],
+            "args": ["--max-old-space-size=50", "82064"],
             "program": "index.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
