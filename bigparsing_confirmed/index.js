@@ -6,27 +6,36 @@ let givenId = null;
 givenId = parseInt(process.argv.filter(arg => isNaN(parseInt(arg)) === false));
 
 if (isNaN(givenId)) {
-
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     });
-
-    rl.question("Quel est l'id ? ", async number => {
-        const givenId = parseInt(number, 10);
-
-        await searchIdInFile(givenId);
-
-        rl.close();
-    });
-
     rl.on("close", function () {
         process.exit(0);
     });
-} else {
+
+    while (isNaN(givenId)) {
+        try {
+            const askNumber = new Promise((resolve, reject) => {
+                rl.question("Quel est l'id ? ", async number => {
+                    const givenId = parseInt(number, 10);
+                    if (isNaN(givenId)) {
+                        reject();
+                    }
+                    resolve(givenId);
+                });
+            })
+            givenId = await askNumber;
+        } catch (error) {
+            // Not a number. Asking again
+        }
+    }
 
     await searchIdInFile(givenId);
 
+    rl.close();
+} else {
+    await searchIdInFile(givenId);
 }
 
 // Create function to be used for differents cases
@@ -35,7 +44,7 @@ if (isNaN(givenId)) {
 async function searchIdInFile(givenId) {
     let readable = fs.createReadStream('./input.json', { encoding: 'utf8' });
 
-    let nameNotInTheSameChunk = await (findName(readable, givenId));
+    const nameNotInTheSameChunk = await (findName(readable, givenId));
 
     if (nameNotInTheSameChunk) {
         readable = fs.createReadStream('./input.json', { encoding: 'utf8', highWaterMark: 128 * 1024 });
@@ -47,7 +56,6 @@ async function findName(readable, givenId) {
     for await (const chunk of readable) {
         if (chunk.indexOf(givenId) != -1) {
 
-            // 
             let openingBracket = chunk.slice(0, chunk.indexOf(givenId)).lastIndexOf('{');
 
             let closingBracket = chunk.indexOf('}', chunk.indexOf(givenId)) + 1;
@@ -56,9 +64,9 @@ async function findName(readable, givenId) {
                 if (openingBracket == 0 || closingBracket == 0) {
                     return true;
                 } else {
-                    // calcul du nombre d'occurence des braquets
+                    // calculation  of the number of  brackets' occurrences
                     ({ openingBracket, closingBracket } = EnsureFirstLevelBrackets(chunk, openingBracket, closingBracket));
-                    
+
                     let str = null, error = null;
                     do {
                         try {
@@ -69,8 +77,8 @@ async function findName(readable, givenId) {
                             closingBracket = chunk.indexOf('}', closingBracket) + 1;
                             openingBracket = chunk.slice(0, openingBracket).lastIndexOf('{');
                         }
-                    }while(error != null)
-                    
+                    } while (error != null)
+
                     if (str.id === givenId) {
                         console.log(`${str.id} | ${str.name}`);
                         return false;
@@ -81,6 +89,7 @@ async function findName(readable, givenId) {
         }
     }
 }
+
 function EnsureFirstLevelBrackets(chunk, openingBracket, closingBracket) {
     let extract = (chunk.slice(openingBracket, closingBracket));
     let nbOpeningBracket = extract.split('{').length - 1;
@@ -98,4 +107,3 @@ function EnsureFirstLevelBrackets(chunk, openingBracket, closingBracket) {
     }
     return { openingBracket, closingBracket };
 }
-
